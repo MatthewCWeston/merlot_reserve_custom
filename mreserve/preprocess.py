@@ -143,15 +143,17 @@ def make_spectrogram(waveform, playback_speed=1, sr=22050, pad_size=2):
     # Tack on playback speed as a (constant) feature
     log_mel = np.concatenate([log_mel, playback_speed * np.ones((1, log_mel.shape[1]), dtype=log_mel.dtype)], 0)
     log_mel = log_mel.T
+    # Subtract 
+    seq_size = (log_mel.shape[0]-pad_size * 4) // 3 # 60
+    epad = log_mel.shape[0] - (seq_size * 3 + pad_size * 3) # Take this bit off at the end.
+    '''target_size = # (seq_size * 3 + pad_size * 4, 65)
+    if log_mel.shape != target_size:
+        raise ValueError("provided mel spectrogram {}. target size: {}".format(log_mel.shape, target_size))'''
 
-    seq_size = 60
-    if log_mel.shape != (seq_size * 3 + pad_size * 4, 65):
-        raise ValueError("provided mel spectrogram {}. target size: {}".format(log_mel.shape, (seq_size * 3 + pad_size * 4, 65)))
-
-    specs = np.stack([
-        log_mel[pad_size:(pad_size + seq_size)],
-        log_mel[(2 * pad_size + seq_size):(2 * pad_size + 2 * seq_size)],
-        log_mel[(3 * pad_size + 2 * seq_size):(3 * pad_size + 3 * seq_size)],
+    specs = np.stack([ # split into thirds and padded at start, end, and joins.
+        log_mel[pad_size:(pad_size + seq_size)],  
+        log_mel[(2 * pad_size + seq_size):(2 * pad_size + 2 * seq_size)], 
+        log_mel[(3 * pad_size + 2 * seq_size):-epad],
     ])
     return specs
 
