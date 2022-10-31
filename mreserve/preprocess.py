@@ -548,7 +548,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
         print(out_df)
     return {
         'images': images,
-        'audio_clips': np.stack(audio_clips).reshape(-1, 60, 65),
+        'audio_clips': np.stack(audio_clips), #.reshape(-1, 60, 65),
         'tokens': np.array(tokens_out, dtype=np.int32),
         'subseg_idxs': np.array(subseg_idxs, dtype=np.int32),
     }
