@@ -16,8 +16,8 @@ model = PretrainedMerlotReserve.from_pretrained(model_name='large', image_grid_s
 ## First open the video and break it up into segments. you can only have 8.
 # Each segment is 5 seconds so it corresponds to seconds 15 - 55 of the video
 
-# Feel free to change the URL!
-video_segments = video_to_segments('pmjPjZZRhNQ.mp4')
+# Take video as command line argument
+video_segments = video_to_segments(sys.argv[1])
 video_segments = video_segments[3:11]
 
 # Set up a fake classification task.
