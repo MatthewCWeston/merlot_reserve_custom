@@ -504,6 +504,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
     subseg_idxs = [] # also known as 'audio_ptr'
     audio_clips = []
     tokens_out = []
+    spectr_shape = video_segments[0]['spectrogram'].shape
     for i, segm_i in enumerate(video_segments):
         if segm_i.get('use_text_as_input', True):
             txt = segm_i.get('text', '')
@@ -519,7 +520,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
 
             # Append a dummy audio clip
             # MCW: The shape of this clip should match the shape of the others!
-            audio_clips.append(np.zeros(segm_i['spectrogram'].shape, dtype=np.float32))
+            audio_clips.append(np.zeros(spectr_shape, dtype=np.float32))
 
             # sub-segment index
             # Getting this exact isn't so critical since we always integer-divide by 3
@@ -548,7 +549,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
         print(out_df)
     return {
         'images': images,
-        'audio_clips': np.stack(audio_clips), #.reshape(-1, 60, 65),
+        'audio_clips': np.stack(audio_clips).reshape(-1, spectr_shape[1], 65),
         'tokens': np.array(tokens_out, dtype=np.int32),
         'subseg_idxs': np.array(subseg_idxs, dtype=np.int32),
     }
