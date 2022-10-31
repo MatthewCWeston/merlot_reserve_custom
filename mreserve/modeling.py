@@ -447,6 +447,12 @@ class AudioTransformer(nn.Module):
         """
         *batch_dims, raw_len, num_mels_plus_playback_speed = x.shape
         assert num_mels_plus_playback_speed == 65
+        # MCW: fix uneven features
+        len_divisor = (self.patch_size * self.pooling_ratio)
+        if (raw_len % len_divisor != 0):
+          x = x[:,:-(raw_len % len_divisor),:]
+          *batch_dims, raw_len, num_mels_plus_playback_speed = x.shape
+        #
         assert raw_len % self.patch_size == 0
         seq_len = raw_len // self.patch_size
 
