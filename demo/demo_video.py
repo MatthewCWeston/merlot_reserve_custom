@@ -18,7 +18,8 @@ model = PretrainedMerlotReserve.from_pretrained(model_name='large', image_grid_s
 
 # Take video as command line argument
 video_segments = video_to_segments(sys.argv[1])
-video_segments = video_segments[3:11]
+if (len(video_segments)>8): # Each segment has metadata, a 'frame' image, a 'spectrogram'. Can replace spec. with text.
+  video_segments = video_segments[3:11]
 
 # Set up a fake classification task.
 video_segments[0]['text'] = 'in this video i\'ll be<|MASK|>'
