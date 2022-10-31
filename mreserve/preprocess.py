@@ -205,7 +205,7 @@ def video_to_segments(video_fn, time_interval=5.0, segment_start_time=0.0, num_s
         raise ValueError(f"could not parse stream for {video_fn}.\n{stream_txt}")
 
     duration -= 1.0  # just be safe to not try to get anything from the end of the video
-    if duration < 5:
+    if duration < time_interval:
         raise ValueError(f"Video {video_fn} is too short")
 
     ##############################################
