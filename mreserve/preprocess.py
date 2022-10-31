@@ -518,7 +518,8 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
                 print(f"Segment {i}: using text not audio as input: {txt}", flush=True)
 
             # Append a dummy audio clip
-            audio_clips.append(np.zeros([3, 60, 65], dtype=np.float32))
+            # MCW: The shape of this clip should match the shape of the others!
+            audio_clips.append(np.zeros(segm_i['spectrogram'].shape, dtype=np.float32))
 
             # sub-segment index
             # Getting this exact isn't so critical since we always integer-divide by 3
