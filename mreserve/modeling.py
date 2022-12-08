@@ -267,9 +267,10 @@ class TransformerLayer(nn.Module):
     def __call__(self, x, *, sinusoids=None, attention_bias=None):
         *batch_dims, seq_len, hsz = x.shape
         assert hsz == self.hidden_size
-        print("Transformer layer my dtype={}; x={}; sinusoids={}".format(
+        # MCW: Remove print statements for ease of use.
+        '''print("Transformer layer my dtype={}; x={}; sinusoids={}".format(
             self.dtype, (x.shape, x.dtype),
-            (sinusoids.dtype, sinusoids.shape) if sinusoids is not None else None), flush=True)
+            (sinusoids.dtype, sinusoids.shape) if sinusoids is not None else None), flush=True)'''
         x_ln = nn.LayerNorm(epsilon=1e-5, dtype=self.dtype, name='pre_attn_ln')(x)
         x_attn = AttentionLayer(hidden_size=self.hidden_size, dtype=self.dtype, size_per_head=self.size_per_head,
                                 name='attention_layer')(x_ln, sinusoids=sinusoids, attention_bias=attention_bias)
