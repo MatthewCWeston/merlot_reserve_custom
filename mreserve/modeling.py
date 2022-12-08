@@ -219,8 +219,9 @@ class AttentionLayer(nn.Module):
         :param sinusoids [*batch_dims, seq_len, rotary_hsize <= size_per_head // 2]. This is how we encode position
         :return:
         """
-        print("{}: {}".format(self.name, 'NOT doing rotary ' if sinusoids is None else f'doing rotary: {sinusoids}'), flush=True)
-        print("{}: ~{}doing attnmask~".format(self.name, 'NOT ' if attention_bias is None else ''), flush=True)
+        # MCW: Removed print statements for ease of use
+        #print("{}: {}".format(self.name, 'NOT doing rotary ' if sinusoids is None else f'doing rotary: {sinusoids}'), flush=True)
+        #print("{}: ~{}doing attnmask~".format(self.name, 'NOT ' if attention_bias is None else ''), flush=True)
         *batch_dims, seq_len, hidden_size = x.shape
         assert self.hidden_size % self.size_per_head == 0
         num_heads = self.hidden_size // self.size_per_head
