@@ -22,6 +22,7 @@ from mreserve.lowercase_encoder import get_encoder, AUDIOSPAN, MASK, MASKAUDIO
 import pandas as pd
 
 import numpy
+np = numpy
 numpy.float = numpy.float64 # Fix skvideo
 numpy.int = numpy.int_
 
