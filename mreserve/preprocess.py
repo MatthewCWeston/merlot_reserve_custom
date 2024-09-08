@@ -9,7 +9,6 @@ sys.path.append('../')
 import scipy
 import concurrent.futures
 import skvideo.io
-import numpy as np
 import subprocess
 import regex as re
 import os
@@ -21,6 +20,10 @@ from typing import Tuple, List, Dict
 from pretrain.data_utils import resize_and_pad
 from mreserve.lowercase_encoder import get_encoder, AUDIOSPAN, MASK, MASKAUDIO
 import pandas as pd
+
+import numpy
+numpy.float = numpy.float64 # Fix skvideo
+numpy.int = numpy.int_
 
 import warnings
 # This is so tensorflow doesn't hog GPUs
@@ -58,7 +61,6 @@ def _detect_black_bars_from_video(frames, blackbar_threshold=16, max_perc_to_tri
     x2 = max(x_frames[-1] + 1, int(w * (1 - max_perc_to_trim)))
     return y1, y2, x1, x2
 
-
 def extract_single_frame_from_video(video_file, t):
     """
     Reads the video, seeks to the given second option
@@ -78,7 +80,6 @@ def extract_single_frame_from_video(video_file, t):
     except StopIteration:
         frame = None
     return frame
-
 
 def extract_frames_from_video(video_file, times, use_multithreading=False, blackbar_threshold=32, max_perc_to_trim=.20):
     """
@@ -106,7 +107,7 @@ def extract_frames_from_video(video_file, times, use_multithreading=False, black
                     i, img = future.result()
                     frames[i] = img
                 except Exception as exc:
-                    print("Oh no {}".format(str(exc)), flush=True)
+                   print("Oh no {}".format(str(exc)), flush=True)
 
     if any([x is None for x in frames]):
         print(f"Fail on {video_file}", flush=True)
@@ -137,13 +138,15 @@ def make_spectrogram(waveform, playback_speed=1, sr=22050, pad_size=2):
         'fmax': 11025.0,  # Half the sample rate
     }
     eps = 1e-1
-    mel = librosa.feature.melspectrogram(waveform, **librosa_params)
+    #mel = librosa.feature.melspectrogram(waveform, **librosa_params)
+    librosa_params['y'] = waveform
+    mel = librosa.feature.melspectrogram(**librosa_params)
     log_mel = np.log(mel + eps) - np.log(eps)
 
     # Tack on playback speed as a (constant) feature
     log_mel = np.concatenate([log_mel, playback_speed * np.ones((1, log_mel.shape[1]), dtype=log_mel.dtype)], 0)
     log_mel = log_mel.T
-    # Subtract 
+    # Subtract
     seq_size = (log_mel.shape[0]-pad_size * 4) // 3 # 60
     epad = log_mel.shape[0] - (seq_size * 3 + pad_size * 3) # Take this bit off at the end.
     '''target_size = # (seq_size * 3 + pad_size * 4, 65)
@@ -151,12 +154,12 @@ def make_spectrogram(waveform, playback_speed=1, sr=22050, pad_size=2):
         raise ValueError("provided mel spectrogram {}. target size: {}".format(log_mel.shape, target_size))'''
 
     specs = np.stack([ # split into thirds and padded at start, end, and joins.
-        log_mel[pad_size:(pad_size + seq_size)],  
-        log_mel[(2 * pad_size + seq_size):(2 * pad_size + 2 * seq_size)], 
+        log_mel[pad_size:(pad_size + seq_size)],
+        log_mel[(2 * pad_size + seq_size):(2 * pad_size + 2 * seq_size)],
         log_mel[(3 * pad_size + 2 * seq_size):-epad],
     ])
     return specs
-
+    
 def invert_spectrogram(spectrogram, playback_speed=1, sr=22050):
     """
     Invert the spectrogram , this is just for debugging.
@@ -181,8 +184,6 @@ def invert_spectrogram(spectrogram, playback_speed=1, sr=22050):
     y2 = librosa.feature.inverse.mel_to_audio(mel.T, **{k: v for k, v in librosa_params.items() if
                                                       k not in ('n_mels', 'eps')})
     return y2
-
-
 
 def video_to_segments(video_fn, time_interval=5.0, segment_start_time=0.0, num_segments_max=None):
     """
@@ -482,8 +483,7 @@ def preprocess_image_to_patches(img, output_grid_size: Tuple[int, int]):
     img = img._numpy()
     return img
 
-
-def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, int], verbose=True):
+def preprocess_video(video_segments, output_grid_size, verbose=True):
     """
     Preprocess a list of video segments.
     :param video_segments: A list of at most 8 segments. Each segment is a dictionary that has to have:
@@ -504,7 +504,6 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
     subseg_idxs = [] # also known as 'audio_ptr'
     audio_clips = []
     tokens_out = []
-    spectr_shape = video_segments[0]['spectrogram'].shape
     for i, segm_i in enumerate(video_segments):
         if segm_i.get('use_text_as_input', True):
             txt = segm_i.get('text', '')
@@ -519,8 +518,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
                 print(f"Segment {i}: using text not audio as input: {txt}", flush=True)
 
             # Append a dummy audio clip
-            # MCW: The shape of this clip should match the shape of the others!
-            audio_clips.append(np.zeros(spectr_shape, dtype=np.float32))
+            audio_clips.append(np.zeros([3, 60, 65], dtype=np.float32))
 
             # sub-segment index
             # Getting this exact isn't so critical since we always integer-divide by 3
@@ -549,7 +547,7 @@ def preprocess_video(video_segments: List[Dict], output_grid_size: Tuple[int, in
         print(out_df)
     return {
         'images': images,
-        'audio_clips': np.stack(audio_clips).reshape(-1, spectr_shape[1], 65),
+        'audio_clips': np.stack(audio_clips).reshape(-1, 60, 65),
         'tokens': np.array(tokens_out, dtype=np.int32),
         'subseg_idxs': np.array(subseg_idxs, dtype=np.int32),
     }
